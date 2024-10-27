@@ -1,0 +1,269 @@
+export async function handler(event, context) {
+    const decodedEvent = JSON.parse(event.body);
+    const { netWorth, H, W, S, D, SS, SD, SSS, SSD, F, FF, FFF, FFFF, FM, M, MM, RB, RS, PB, PS, MT, HM } = decodedEvent;
+    const CH = S + D;
+    const IK = RB + RS + PB + PS + MT;
+    const baseCount = 24;
+
+    let results = {
+        HShare: 0,  // Husband
+        WShare: 0,  // Wife
+        SShare: 0, //Son
+        DShare: 0,  // Daughter
+        SSShare: 0, //Son's Son
+        SDShare: 0, // Sons' Daughter
+        SSSShare: 0, //Son's Son's Son
+        SSDShare: 0, // Sons' Son's Daughter
+        FShare: 0,   // Father
+        FFShare: 0,  // Father's Father
+        FFFShare: 0, // Father's Father's Father's Share
+        FFFFShare: 0, // Father's Father's Father's Share
+        FMShare: 0,  // Father's Mother
+        MShare: 0,   // Mother
+        MMShare: 0,  // Mother's Mother
+        RBShare: 0,  // RB
+        RSShare: 0,  // RS
+        PBShare: 0,  // PB
+        PSShare: 0,   // PS
+        MTShare: 0  // Maternal Siblings
+    };
+
+    // Calculate shares based on baseCount
+    if (H > 0) results.HShare = calculateHShare(netWorth, CH, baseCount);
+    if (W > 0) results.WShare = calculateWShare(netWorth, CH, baseCount);
+    if (D > 0) results.DShare = calculateDShare(netWorth, D, S, baseCount);
+    if (SD > 0) results.SDShare = calculateSDShare(netWorth, S, D, SS, SD, baseCount);
+    if (SSD > 0) results.SSDShare = calculateSSDShare(netWorth, S, D, SS, SD, SSS, SSD, baseCount);
+    if (F > 0) results.FShare = calculateFShare(netWorth, CH, baseCount);
+    if (M > 0) results.MShare = calculateMShare(netWorth, CH, IK, H, W, F, baseCount);
+    if (FF > 0) results.FFShare = calculateFFShare(netWorth, CH, F, baseCount);
+    if (FM > 0) results.FMShare = calculateFMShare(netWorth, M, F, HM, baseCount);
+    if (MM > 0) results.MMShare = calculateMMShare(netWorth, M, baseCount);
+    if (results.FMShare > 0 && results.MMShare > 0) {
+        results.FMShare = results.FMShare / 2;
+        results.MMShare = results.MMShare / 2;
+    }
+    if (RS > 0) results.RSShare = calculateRSShare(netWorth, CH, F, FF, RB, RS, baseCount);
+    if (PS > 0) results.PSShare = calculatePSShare(netWorth, CH, F, FF, RB, RS, PB, PS, baseCount);
+    if (MT > 0) results.MTShare = calculateMTShare(netWorth, CH, F, FF, MT, baseCount);
+
+    // Calculate the total distributed amount
+    let totalDistributed = Object.values(results).reduce((sum, share) => sum + share, 0);
+
+    // Recalibrate if total distributed is more than the net worth
+    if (totalDistributed > netWorth) {
+        const recalibrationFactor = netWorth / totalDistributed;
+        for (let key in results) {
+            results[key] = results[key] * recalibrationFactor;
+        }
+        totalDistributed = netWorth;  // Now totalDistributed should equal netWorth
+    }
+
+    // Calculate the remaining net worth
+    let remainingNetWorth = netWorth - totalDistributed;
+    
+    
+    //residuary
+    if (remainingNetWorth > 0){
+        if (S > 0){
+            if(D > 0){
+                remainingNetWorth = remainingNetWorth/((S * 2) + D);
+                results.SShare = remainingNetWorth * 2 *S;
+                results.DShare = remainingNetWorth * D;
+            }
+            else{ 
+                results.SShare = remainingNetWorth;
+            }
+            
+        }
+        else if (SS > 0){
+            if(SD > 0){
+                remainingNetWorth = remainingNetWorth/((SS * 2) + SD);
+                results.SSShare = remainingNetWorth * 2 * SS;
+                results.SDShare = remainingNetWorth * SD;
+            }
+            else{ 
+                results.SSShare = remainingNetWorth;
+            }
+        }
+        else if(SSS > 0){
+            if(SSD > 0){
+                remainingNetWorth = remainingNetWorth/((SSS * 2) + SSD);
+                results.SSSShare = remainingNetWorth * 2 * SSS;
+                results.SSDShare = remainingNetWorth * SSD;
+            }
+            else{ 
+                results.SSSShare = remainingNetWorth;
+            }
+        }
+        else if(F > 0){
+            results.FShare = remainingNetWorth;
+        }
+        else if(FF > 0){
+            results.FFShare = remainingNetWorth;
+        }
+        else if(FFF > 0){
+            results.FFFShare = remainingNetWorth;
+        }
+        else if(FFFF > 0){
+            results.FFFFShare = remainingNetWorth;
+        }
+        else if(RB > 0){
+            if(RS > 0){
+                remainingNetWorth = remainingNetWorth/((RB * 2) + RS);
+                results.RBShare = remainingNetWorth * 2 * RB;
+                results.RSShare = remainingNetWorth * RS;
+            }
+            else{ 
+                results.RBShare = remainingNetWorth;
+            }
+        }
+        else if(RS > 0){
+            if (results.RSShare === 0) results.RSShare = remainingNetWorth;
+        }
+        else if(PB > 0){
+            if(PS > 0){
+                remainingNetWorth = remainingNetWorth/((PB * 2) + PS);
+                results.PBShare = remainingNetWorth * 2 * PB;
+                results.PSShare = remainingNetWorth * PS;
+            }
+            else{ 
+                results.RPShare = remainingNetWorth;
+            }
+        }
+        else if(PS > 0){
+            if (results.PSShare === 0) results.PSShare = remainingNetWorth;
+        }
+    }
+
+    // Limit all results to two decimal places before returning
+    for (let key in results) {
+        results[key] = parseFloat(results[key].toFixed(2));
+    }
+
+    const output = {
+                   netWorth,
+                   //remainingNetWorth,
+                   ...results
+        }
+        
+    return {
+        statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Headers" : "Content-Type",
+            "Access-Control-Allow-Origin": "*", // Allow from anywhere 
+            "Access-Control-Allow-Methods": "*" // Allow only GET request 
+        },
+        body: JSON.stringify(output)    	
+    };
+}
+
+// Individual share calculation functions
+
+function calculateHShare(netWorth, CH, count) {
+    const sharePercentage = CH > 0 ? 6/count : 12/count;
+    return netWorth * sharePercentage;
+}
+
+function calculateWShare(netWorth, CH, count) {
+    const sharePercentage = CH > 0 ? 3/count : 6/count;
+    return netWorth * sharePercentage;
+}
+
+function calculateDShare(netWorth, D, S, count) {
+    let sharePercentage = 0;
+    if (S === 0) {
+        sharePercentage = D === 1 ? 12/count : 16/count;
+    }
+    return netWorth * sharePercentage;
+}
+
+function calculateSDShare(netWorth, S, D, SS, SD, count) {
+    let sharePercentage = 0;
+    if (S === 0 && D === 0 && SS === 0) {
+        sharePercentage = SD === 1 ? 12/count : 16/count;
+    } else if (D === 1 && S === 0 && SS === 0) {
+        sharePercentage = 4/count;
+    }
+    return netWorth * sharePercentage;
+}
+
+function calculateSSDShare(netWorth, S, D, SS, SD, SSS, SSD, count) {
+    let sharePercentage = 0;
+    if (S === 0 && D === 0 && SS === 0 && SD === 0 && SSS === 0) {
+        sharePercentage = SSD === 1 ? 12/count : 16/count;
+    } else if (S === 0 && SS === 0 && SSS === 0 && (D === 1 || SD === 1)) {
+        sharePercentage = 4/count;
+    }
+    return netWorth * sharePercentage;
+}
+
+function calculateFShare(netWorth, CH, count) {
+    const sharePercentage = CH > 0 ? 4/count : 0;
+    return netWorth * sharePercentage;
+}
+
+function calculateMShare(netWorth, CH, IK, H, W, F, count) {
+    let sharePercentage = 0;
+    if (CH > 0 || IK > 0 || (H > 0 && F > 0)) {
+        sharePercentage = 4/count;
+    } else if (W + F > 0) {
+        sharePercentage = 6/count;
+    } else {
+        sharePercentage = 8/count;
+    }
+    return netWorth * sharePercentage;
+}
+
+function calculateFFShare(netWorth, CH, F, count) {
+    let sharePercentage = 0;
+    if (CH > 0 && F === 0) {
+        sharePercentage = 4/count;
+    }
+    return netWorth * sharePercentage;
+}
+
+function calculateFMShare(netWorth, M, F, HM, count) {
+    let sharePercentage = 0;
+    if (HM === "yes") {
+        if (F === 0 && M === 0) {
+            sharePercentage = 4/count;
+        }
+    } else if (M === 0) sharePercentage = 4/count;
+    
+    return netWorth * sharePercentage;
+}
+
+function calculateMMShare(netWorth, M, count) {
+    const sharePercentage = M === 0 ? 4/count : 0;
+    return netWorth * sharePercentage;
+}
+
+function calculateRSShare(netWorth, CH, F, FF, RB, RS, count) {
+    let sharePercentage = 0;
+    if (CH === 0 && F === 0 && FF === 0 && RB === 0) {
+        if (RS > 1) sharePercentage = 16/count;
+        else sharePercentage = 12/count;
+    }
+    return netWorth * sharePercentage;
+}
+
+function calculatePSShare(netWorth, CH, F, FF, RB, RS, PB, PS, count) {
+    let sharePercentage = 0;
+    if (CH === 0 && F === 0 && FF === 0 && RB === 0 && RS === 0 && PB === 0) {
+        if (PS > 1) sharePercentage = 16/count;
+        else sharePercentage = 12/count;
+    } else if (CH === 0 && F === 0 && FF === 0 && RB === 0 && RS === 1 && PB === 0) {
+        sharePercentage = 4/count;
+    }
+    return netWorth * sharePercentage;
+}
+
+function calculateMTShare(netWorth, CH, F, FF, MT, count) {
+    let sharePercentage = 0;
+    if (CH === 0 && F === 0 && FF === 0) {
+        if (MT > 1) sharePercentage = 8/count;
+        else sharePercentage = 4/count;
+    }
+    return netWorth * sharePercentage;
+}
