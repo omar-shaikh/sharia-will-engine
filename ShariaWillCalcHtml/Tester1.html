@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharia Will Calculator Survey</title>
+</head>
+<body>
+    <h1>Sharia Will Calculator Survey</h1>
+    <form id="survey-form">
+        <!-- Net Worth Input -->
+        <label for="netWorth">Net Worth:</label>
+        <input type="number" id="netWorth" name="netWorth" required><br><br>
+        
+        <!-- Input Fields for All Parameters -->
+        <label for="H">Husband (H):</label>
+        <input type="number" id="H" name="H" value="0"><br><br>
+        
+        <label for="W">Wife (W):</label>
+        <input type="number" id="W" name="W" value="0"><br><br>
+        
+        <label for="S">Son (S):</label>
+        <input type="number" id="S" name="S" value="0"><br><br>
+        
+        <label for="D">Daughter (D):</label>
+        <input type="number" id="D" name="D" value="0"><br><br>
+        
+        <label for="SS">Son's Son (SS):</label>
+        <input type="number" id="SS" name="SS" value="0"><br><br>
+        
+        <label for="SD">Son's Daughter (SD):</label>
+        <input type="number" id="SD" name="SD" value="0"><br><br>
+        
+        <label for="SSS">Son's Son's Son (SSS):</label>
+        <input type="number" id="SSS" name="SSS" value="0"><br><br>
+        
+        <label for="SSD">Son's Son's Daughter (SSD):</label>
+        <input type="number" id="SSD" name="SSD" value="0"><br><br>
+        
+        <label for="F">Father (F):</label>
+        <input type="number" id="F" name="F" value="0"><br><br>
+        
+        <label for="FF">Father's Father (FF):</label>
+        <input type="number" id="FF" name="FF" value="0"><br><br>
+        
+        <label for="FFF">Father's Father's Father (FFF):</label>
+        <input type="number" id="FFF" name="FFF" value="0"><br><br>
+        
+        <label for="FFFF">Father's Father's Father's Father (FFFF):</label>
+        <input type="number" id="FFFF" name="FFFF" value="0"><br><br>
+        
+        <label for="FM">Father's Mother (FM):</label>
+        <input type="number" id="FM" name="FM" value="0"><br><br>
+        
+        <label for="M">Mother (M):</label>
+        <input type="number" id="M" name="M" value="0"><br><br>
+        
+        <label for="MM">Mother's Mother (MM):</label>
+        <input type="number" id="MM" name="MM" value="0"><br><br>
+        
+        <label for="RB">Father's Brothers (RB):</label>
+        <input type="number" id="RB" name="RB" value="0"><br><br>
+        
+        <label for="RS">Father's Sisters (RS):</label>
+        <input type="number" id="RS" name="RS" value="0"><br><br>
+        
+        <label for="PB">Paternal Brothers (PB):</label>
+        <input type="number" id="PB" name="PB" value="0"><br><br>
+        
+        <label for="PS">Paternal Sisters (PS):</label>
+        <input type="number" id="PS" name="PS" value="0"><br><br>
+        
+        <label for="MT">Maternal Siblings (MT):</label>
+        <input type="number" id="MT" name="MT" value="0"><br><br>
+        
+        <label for="HM">Half-Maternal (HM):</label>
+        <select id="HM" name="HM">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+        </select><br><br>
+
+        <!-- Submit Button -->
+        <button type="button" onclick="submitForm()">Submit</button>
+    </form>
+
+    <script>
+        async function submitForm() {
+            // Gather form data
+            const formData = {
+                netWorth: parseFloat(document.getElementById('netWorth').value),
+                H: parseInt(document.getElementById('H').value),
+                W: parseInt(document.getElementById('W').value),
+                S: parseInt(document.getElementById('S').value),
+                D: parseInt(document.getElementById('D').value),
+                SS: parseInt(document.getElementById('SS').value),
+                SD: parseInt(document.getElementById('SD').value),
+                SSS: parseInt(document.getElementById('SSS').value),
+                SSD: parseInt(document.getElementById('SSD').value),
+                F: parseInt(document.getElementById('F').value),
+                FF: parseInt(document.getElementById('FF').value),
+                FFF: parseInt(document.getElementById('FFF').value),
+                FFFF: parseInt(document.getElementById('FFFF').value),
+                FM: parseInt(document.getElementById('FM').value),
+                M: parseInt(document.getElementById('M').value),
+                MM: parseInt(document.getElementById('MM').value),
+                RB: parseInt(document.getElementById('RB').value),
+                RS: parseInt(document.getElementById('RS').value),
+                PB: parseInt(document.getElementById('PB').value),
+                PS: parseInt(document.getElementById('PS').value),
+                MT: parseInt(document.getElementById('MT').value),
+                HM: document.getElementById('HM').value
+            };
+
+            try {
+                const response = await fetch('https://336iykl1pe.execute-api.us-east-2.amazonaws.com/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+                console.log(result); // Display or handle results as needed
+                alert(`Calculation complete: ${JSON.stringify(result)}`);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error occurred. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
